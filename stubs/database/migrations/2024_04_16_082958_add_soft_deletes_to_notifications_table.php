@@ -10,14 +10,8 @@ return new class extends Migration {
 	 */
 	public function up(): void
 	{
-		Schema::create("files", function (Blueprint $table) {
-			$table->id();
-			$table->morphs("fileable");
-			$table->string("name");
-			$table->string("path")->unique();
-			$table->string("mime_type");
-			$table->unsignedBigInteger("size");
-			$table->timestamps();
+		Schema::table("notifications", function (Blueprint $table) {
+			$table->softDeletes()->after("id");
 		});
 	}
 
@@ -26,6 +20,8 @@ return new class extends Migration {
 	 */
 	public function down(): void
 	{
-		Schema::dropIfExists("files");
+		Schema::table("notifications", function (Blueprint $table) {
+			$table->dropSoftDeletes();
+		});
 	}
 };
