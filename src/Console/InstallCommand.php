@@ -1,6 +1,6 @@
 <?php
 
-namespace Tadasei\BackendFileManagement\Console;
+namespace Tadasei\BackendTrashableNotifications\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;

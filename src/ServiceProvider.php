@@ -1,10 +1,10 @@
 <?php
 
-namespace Tadasei\BackendFileManagement;
+namespace Tadasei\BackendTrashableNotifications;
 
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
-use Tadasei\BackendFileManagement\Console\InstallCommand;
+use Tadasei\BackendTrashableNotifications\Console\InstallCommand;
 
 class ServiceProvider extends BaseServiceProvider implements DeferrableProvider
 {

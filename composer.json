@@ -1,7 +1,7 @@
 {
-    "name": "tadasei/backend-file-management",
-    "description": "A package that provides stubs for managing file associations with models",
-	"keywords": ["laravel", "file", "stubs", "backend"],
+    "name": "tadasei/backend-trashable-notifications",
+    "description": "A package that provides stubs for soft deletable notifications support",
+	"keywords": ["laravel", "notification", "stubs", "backend"],
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -24,7 +24,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Tadasei\\BackendFileManagement\\": "src/"
+            "Tadasei\\BackendTrashableNotifications\\": "src/"
         }
     },
 	"config": {
@@ -33,7 +33,7 @@
 	"extra": {
 		"laravel": {
 			"providers": [
-				"Tadasei\\BackendFileManagement\\ServiceProvider"
+				"Tadasei\\BackendTrashableNotifications\\ServiceProvider"
 			]
 		}
 	}
