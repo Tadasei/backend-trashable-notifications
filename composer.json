@@ -1,0 +1,40 @@
+{
+    "name": "tadasei/backend-file-management",
+    "description": "A package that provides stubs for managing file associations with models",
+	"keywords": ["laravel", "file", "stubs", "backend"],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tadasei",
+            "email": "chemselhak.mahouche@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": "^8.1.0",
+        "illuminate/console": "^9.0|^10.0|^11.0",
+        "illuminate/filesystem": "^9.0|^10.0|^11.0",
+        "illuminate/support": "^9.0|^10.0|^11.0",
+        "illuminate/validation": "^9.0|^10.0|^11.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0",
+        "phpstan/phpstan": "^1.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "Tadasei\\BackendFileManagement\\": "src/"
+        }
+    },
+	"config": {
+		"sort-packages": true
+	},
+	"extra": {
+		"laravel": {
+			"providers": [
+				"Tadasei\\BackendFileManagement\\ServiceProvider"
+			]
+		}
+	}
+}
