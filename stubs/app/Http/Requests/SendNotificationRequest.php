@@ -3,16 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-use App\Models\{Complaint, ContactMethod, Demand, FollowUp, Reminder, User};
-use App\Notifications\{
-	ComplaintCreated,
-	ComplaintFollowUpCreated,
-	ComplaintReminder,
-	ComplaintUpdated,
-	DemandCreated,
-};
 use App\Rules\{ArrayItem, ExistingMorphId, HasConstructorParamKeys};
 
 class SendNotificationRequest extends FormRequest
@@ -28,13 +19,9 @@ class SendNotificationRequest extends FormRequest
 			"type" => [
 				"required",
 				"string",
-				Rule::in([
-					ComplaintFollowUpCreated::class,
-					ComplaintReminder::class,
-					DemandCreated::class,
-					ComplaintCreated::class,
-					ComplaintUpdated::class,
-				]),
+				// Rule::in([
+				// 	ExampleNotification::class,
+				// ]),
 			],
 			"notifiables" => ["sometimes", "array"],
 			"notifiables.*" => [
@@ -45,7 +32,9 @@ class SendNotificationRequest extends FormRequest
 					"type" => [
 						"required",
 						"string",
-						Rule::in([ContactMethod::class, User::class]),
+						// Rule::in([
+						//     ExampleNotifiable::class,
+						// ]),
 					],
 					"id" => [
 						"required",
@@ -55,8 +44,8 @@ class SendNotificationRequest extends FormRequest
 							"type",
 							fn($attributeName, $attribute) => __(
 								"Cannot send a notification to a non existing :attribute",
-								["attribute" => strtolower($attributeName)],
-							),
+								["attribute" => strtolower($attributeName)]
+							)
 						),
 					],
 				]),
@@ -70,12 +59,9 @@ class SendNotificationRequest extends FormRequest
 					"model" => [
 						"sometimes",
 						"string",
-						Rule::in([
-							FollowUp::class,
-							Reminder::class,
-							Demand::class,
-							Complaint::class,
-						]),
+						// Rule::in([
+						// 	ExampleModel::class,
+						// ]),
 					],
 					"value" => [
 						"present",
@@ -83,8 +69,8 @@ class SendNotificationRequest extends FormRequest
 						new ExistingMorphId(
 							"model",
 							fn($attributeName, $attribute) => __(
-								"$attribute is invalid",
-							),
+								"$attribute is invalid"
+							)
 						),
 					],
 				]),
@@ -102,21 +88,20 @@ class SendNotificationRequest extends FormRequest
 			$this->safe()
 				->merge([
 					"notifiables" => collect($this->notifiables)->map(
-						fn($item) => resolve($item["type"])->find($item["id"]),
+						fn($item) => resolve($item["type"])->find($item["id"])
 					),
 					"params" => collect($this->params)->map(
 						fn($item) => match (
-							!key_exists("model", $item) ? null : $item["model"]
+						!key_exists("model", $item) ? null : $item["model"]
 						) {
 							null => $item["value"],
-							Complaint::class => Demand::find($item["value"]),
 							default => resolve($item["model"])->find(
-								$item["value"],
+								$item["value"]
 							),
-						},
+						}
 					),
 				])
-				->all(),
+				->all()
 		);
 	}
 }

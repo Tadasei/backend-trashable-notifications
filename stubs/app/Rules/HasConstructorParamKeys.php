@@ -42,7 +42,7 @@ class HasConstructorParamKeys implements ValidationRule, DataAwareRule
 	public function validate(
 		string $attribute,
 		mixed $value,
-		Closure $fail,
+		Closure $fail
 	): void {
 		if (
 			array_diff(
@@ -51,8 +51,8 @@ class HasConstructorParamKeys implements ValidationRule, DataAwareRule
 					(new ReflectionClass($this->data[$this->typeInputName]))
 						->getConstructor()
 						->getParameters(),
-					"name",
-				),
+					"name"
+				)
 			)
 		) {
 			$fail(__("$attribute has invalid keys"));

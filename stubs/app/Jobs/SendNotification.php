@@ -12,7 +12,7 @@ use Illuminate\Queue\{InteractsWithQueue, SerializesModels};
 use Illuminate\Support\{
 	Facades\DB,
 	Facades\Notification as FacadesNotification,
-	Collection,
+	Collection
 };
 
 class SendNotification implements ShouldQueue
@@ -24,7 +24,7 @@ class SendNotification implements ShouldQueue
 	 */
 	public function __construct(
 		private Collection|Model $notifiables,
-		private Notification $notification,
+		private Notification $notification
 	) {
 		$this->onQueue("notifications");
 	}

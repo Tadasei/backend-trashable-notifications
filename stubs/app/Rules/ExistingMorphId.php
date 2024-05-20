@@ -2,16 +2,16 @@
 
 namespace App\Rules;
 
+use App\Models\User;
 use Closure;
 
-use App\Models\{Complaint, ContactMethod, Demand, FollowUp, User};
 use Illuminate\Contracts\Validation\{DataAwareRule, ValidationRule};
 
 class ExistingMorphId implements ValidationRule, DataAwareRule
 {
 	public function __construct(
 		protected string $morphTypeInputName,
-		protected Closure $getErrorMessage,
+		protected Closure $getErrorMessage
 	) {
 	}
 
@@ -44,33 +44,15 @@ class ExistingMorphId implements ValidationRule, DataAwareRule
 	public function validate(
 		string $attribute,
 		mixed $value,
-		Closure $fail,
+		Closure $fail
 	): void {
 		if (key_exists($this->morphTypeInputName, $this->data)) {
 			["exists" => $exists, "attributeName" => $attributeName] = match (
-				$this->data[$this->morphTypeInputName]
+			$this->data[$this->morphTypeInputName]
 			) {
-				Demand::class => [
-					"exists" => Demand::where("id", $value)->exists(),
-					"attributeName" => __("Application"),
-				],
-				Complaint::class => [
-					"exists" => Demand::complaints()
-						->where("id", $value)
-						->exists(),
-					"attributeName" => __("Complaint"),
-				],
-				ContactMethod::class => [
-					"exists" => ContactMethod::where("id", $value)->exists(),
-					"attributeName" => __("Contact method"),
-				],
 				User::class => [
 					"exists" => User::where("id", $value)->exists(),
 					"attributeName" => __("User"),
-				],
-				FollowUp::class => [
-					"exists" => FollowUp::where("id", $value)->exists(),
-					"attributeName" => __("Follow-up"),
 				],
 				default => [
 					"exists" => false,
@@ -82,7 +64,7 @@ class ExistingMorphId implements ValidationRule, DataAwareRule
 				$fail(
 					is_null($attributeName)
 						? __("$attribute is invalid")
-						: ($this->getErrorMessage)($attributeName, $attribute),
+						: ($this->getErrorMessage)($attributeName, $attribute)
 				);
 			}
 		}

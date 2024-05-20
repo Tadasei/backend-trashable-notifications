@@ -2,12 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\{
-	TrashableDatabaseNotification,
-	User
-};
+use App\Models\{DatabaseNotification, User};
 
-class TrashableDatabaseNotificationPolicy
+class DatabaseNotificationPolicy
 {
 	/**
 	 * Determine whether the user can view any models.
@@ -36,20 +33,16 @@ class TrashableDatabaseNotificationPolicy
 	/**
 	 * Determine whether the user can view the model.
 	 */
-	public function view(
-		User $user,
-		TrashableDatabaseNotification $notification,
-	): bool {
+	public function view(User $user, DatabaseNotification $notification): bool
+	{
 		return $notification->notifiable->is($user);
 	}
 
 	/**
 	 * Determine whether the user can edit the model.
 	 */
-	public function edit(
-		User $user,
-		TrashableDatabaseNotification $notification,
-	): bool {
+	public function edit(User $user, DatabaseNotification $notification): bool
+	{
 		return $this->view($user, $notification);
 	}
 
@@ -58,7 +51,7 @@ class TrashableDatabaseNotificationPolicy
 	 */
 	public function update(
 		User $user,
-		TrashableDatabaseNotification $notification,
+		DatabaseNotification $notification,
 		$context = null,
 	): bool {
 		return $this->edit($user, $notification);
@@ -69,25 +62,10 @@ class TrashableDatabaseNotificationPolicy
 	 */
 	public function delete(
 		User $user,
-		TrashableDatabaseNotification $notification,
+		DatabaseNotification $notification,
 		$context = null,
 	): bool {
 		return $this->edit($user, $notification);
-	}
-
-	/**
-	 * Determine whether the user can delete the collection of models.
-	 */
-	public function deleteMany(
-		User $user,
-		array $notificationIds,
-		$context = null,
-	): bool {
-		return $user
-			->notifications()
-			->pluck("id")
-			->flip()
-			->has($notificationIds);
 	}
 
 	/**
@@ -95,7 +73,7 @@ class TrashableDatabaseNotificationPolicy
 	 */
 	public function restore(
 		User $user,
-		TrashableDatabaseNotification $notification,
+		DatabaseNotification $notification,
 	): bool {
 		return true;
 	}
@@ -105,8 +83,8 @@ class TrashableDatabaseNotificationPolicy
 	 */
 	public function forceDelete(
 		User $user,
-		TrashableDatabaseNotification $notification,
+		DatabaseNotification $notification,
 	): bool {
-		return true;
+		return $this->delete($user, $notification);
 	}
 }

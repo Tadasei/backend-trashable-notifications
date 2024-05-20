@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\SendNotification;
-use Illuminate\Support\Facades\DB;
+use App\Models\DatabaseNotification;
 
 use App\Http\Requests\{
-	TrashableDatabaseNotification\DeleteTrashableDatabaseNotificationRequest,
-	SendNotificationRequest,
+	DatabaseNotification\DeleteDatabaseNotificationRequest,
+	SendNotificationRequest
 };
-use App\Models\{Agent, TrashableDatabaseNotification};
 use Illuminate\Http\{JsonResponse, Request, Response};
+use Illuminate\Support\Facades\{DB, Gate};
 
 class NotificationController extends Controller
 {
@@ -19,7 +19,7 @@ class NotificationController extends Controller
 	 */
 	public function index(Request $request): JsonResponse
 	{
-		$this->authorize("viewAny", TrashableDatabaseNotification::class);
+		Gate::authorize("viewAny", DatabaseNotification::class);
 
 		return response()->json([
 			"notifications" => $request->user()->notifications,
@@ -31,8 +31,8 @@ class NotificationController extends Controller
 	 */
 	public function send(SendNotificationRequest $request): Response
 	{
-		$this->authorize("store", [
-			TrashableDatabaseNotification::class,
+		Gate::authorize("store", [
+			DatabaseNotification::class,
 			$request->all(),
 		]);
 
@@ -44,7 +44,7 @@ class NotificationController extends Controller
 
 		SendNotification::dispatch(
 			$request->notifiables,
-			$notification,
+			$notification
 		)->afterCommit();
 
 		return response()->noContent();
@@ -53,9 +53,9 @@ class NotificationController extends Controller
 	/**
 	 * Read the specified notification and redirect to the related resource.
 	 */
-	public function read(TrashableDatabaseNotification $notification): Response
+	public function read(DatabaseNotification $notification): Response
 	{
-		$this->authorize("update", $notification);
+		Gate::authorize("update", $notification);
 
 		DB::transaction(fn() => $notification->markAsRead());
 
@@ -66,24 +66,23 @@ class NotificationController extends Controller
 	 * Remove the specified resource from storage.
 	 */
 	public function destroy(
-		DeleteTrashableDatabaseNotificationRequest $request,
+		DeleteDatabaseNotificationRequest $request
 	): Response {
-		$this->authorize("deleteMany", [
-			TrashableDatabaseNotification::class,
-			$request->notifications,
-		]);
+		DatabaseNotification::whereIn("id", $request->notifications)
+			->get()
+			->each(
+				fn(DatabaseNotification $notification) => Gate::authorize(
+					"forceDelete",
+					$notification
+				)
+			);
 
-		DB::transaction(function () use ($request) {
-			TrashableDatabaseNotification::notForContactableTypes([
-				Agent::class,
-			])
-				->whereIn("id", $request->notifications)
-				->forceDelete();
-
-			TrashableDatabaseNotification::forContactableTypes([Agent::class])
-				->whereIn("id", $request->notifications)
-				->delete();
-		});
+		DB::transaction(
+			fn() => DatabaseNotification::whereIn(
+				"id",
+				$request->notifications
+			)->forceDelete()
+		);
 
 		return response()->noContent();
 	}

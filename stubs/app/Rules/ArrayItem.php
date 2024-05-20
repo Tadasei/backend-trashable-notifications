@@ -10,7 +10,7 @@ class ArrayItem implements ValidationRule
 	public function __construct(
 		protected array $rules,
 		protected array $messages = [],
-		protected array $attributes = [],
+		protected array $attributes = []
 	) {
 		//
 	}
@@ -22,13 +22,13 @@ class ArrayItem implements ValidationRule
 	public function validate(
 		string $attribute,
 		mixed $value,
-		Closure $fail,
+		Closure $fail
 	): void {
 		$validator = validator(
 			$value,
 			$this->rules,
 			$this->messages,
-			$this->attributes,
+			$this->attributes
 		);
 
 		if ($validator->fails()) {

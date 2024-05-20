@@ -3,7 +3,7 @@
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(["auth"])->group(function () {
+Route::middleware(["auth:sanctum"])->group(function () {
 	Route::delete("/notifications", [
 		NotificationController::class,
 		"destroy",
@@ -17,9 +17,7 @@ Route::middleware(["auth"])->group(function () {
 	Route::patch("/notifications/{notification}", [
 		NotificationController::class,
 		"read",
-	])
-		->name("notifications.read")
-		->middleware("notification.auth");
+	])->name("notifications.read");
 
 	Route::apiResource("notifications", NotificationController::class)->only([
 		"index",

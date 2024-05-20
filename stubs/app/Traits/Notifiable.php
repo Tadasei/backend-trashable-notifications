@@ -2,7 +2,7 @@
 
 namespace App\Http\Traits;
 
-use App\Models\TrashableDatabaseNotification;
+use App\Models\DatabaseNotification;
 
 trait Notifiable
 {
@@ -18,8 +18,8 @@ trait Notifiable
 	public function notifications()
 	{
 		return $this->morphMany(
-			TrashableDatabaseNotification::class,
-			"notifiable",
+			DatabaseNotification::class,
+			"notifiable"
 		)->latest();
 	}
 
