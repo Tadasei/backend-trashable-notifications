@@ -16,13 +16,13 @@ class InstallCommand extends Command
 	 *
 	 * @var string
 	 */
-	protected $signature = "file-management:install";
+	protected $signature = "trashable-notifications:install";
 	/**
 	 * The console command description.
 	 *
 	 * @var string
 	 */
-	protected $description = "Publishes file management migrations, models, rules and traits";
+	protected $description = "Publishes trashable notifications management utilities";
 
 	/**
 	 * Execute the console command.
@@ -34,7 +34,17 @@ class InstallCommand extends Command
 		// Ensuring required directories exist
 
 		foreach (
-			[app_path("Traits"), app_path("Rules"), app_path("Models")]
+			[
+				base_path("routes/resources"),
+				app_path("Traits"),
+				app_path("Rules"),
+				app_path("Policies"),
+				app_path("Models"),
+				app_path("Jobs"),
+				app_path("Http/Requests"),
+				app_path("Http/Requests/DatabaseNotification"),
+				app_path("Http/Controllers"),
+			]
 			as $target_directory
 		) {
 			if (!file_exists($target_directory)) {
@@ -46,26 +56,71 @@ class InstallCommand extends Command
 
 		foreach (
 			[
+				// Routes
+				__DIR__ .
+				"/../../stubs/routes/resources/notification.php" => base_path(
+					"routes/resources/notification.php"
+				),
+
 				// Migration
 				__DIR__ .
-				"/../../stubs/database/migrations/2023_05_13_195531_create_files_table.php" => database_path(
-					"migrations/2023_05_13_195531_create_files_table.php"
+				"/../../stubs/database/migrations/2024_04_16_082958_add_soft_deletes_to_notifications_table.php" => database_path(
+					"migrations/2024_04_16_082958_add_soft_deletes_to_notifications_table.php"
 				),
 
 				// Trait
+				__DIR__ . "/../../stubs/app/Traits/Notifiable.php" => app_path(
+					"Traits/Notifiable.php"
+				),
+
+				// Validation rules
+				__DIR__ . "/../../stubs/app/Rules/ArrayItem.php" => app_path(
+					"Rules/ArrayItem.php"
+				),
+
 				__DIR__ .
-				"/../../stubs/app/Traits/InteractsWithFiles.php" => app_path(
-					"Traits/InteractsWithFiles.php"
+				"/../../stubs/app/Rules/ExistingMorphId.php" => app_path(
+					"Rules/ExistingMorphId.php"
+				),
+
+				__DIR__ .
+				"/../../stubs/app/Rules/HasConstructorParamKeys.php" => app_path(
+					"Rules/HasConstructorParamKeys.php"
+				),
+
+				// Policy
+				__DIR__ .
+				"/../../stubs/app/Policies/DatabaseNotificationPolicy.php" => app_path(
+					"Policies/DatabaseNotificationPolicy.php"
 				),
 
 				// Model
-				__DIR__ . "/../../stubs/app/Models/File.php" => app_path(
-					"Models/File.php"
+				__DIR__ .
+				"/../../stubs/app/Models/DatabaseNotification.php" => app_path(
+					"Models/DatabaseNotification.php"
 				),
 
-				// Validation rule
-				__DIR__ . "/../../stubs/app/Rules/FileUpdate.php" => app_path(
-					"Rules/FileUpdate.php"
+				// Job
+				__DIR__ .
+				"/../../stubs/app/Jobs/SendNotification.php" => app_path(
+					"Jobs/SendNotification.php"
+				),
+
+				// Form requests
+				__DIR__ .
+				"/../../stubs/app/Http/Requests/SendNotificationRequest.php" => app_path(
+					"Http/Requests/SendNotificationRequest.php"
+				),
+
+				__DIR__ .
+				"/../../stubs/app/Http/Requests/DatabaseNotification/DeleteDatabaseNotificationRequest.php" => app_path(
+					"Http/Requests/DatabaseNotification/DeleteDatabaseNotificationRequest.php"
+				),
+
+				// Controller
+				__DIR__ .
+				"/../../stubs/app/Http/Controllers/NotificationController.php" => app_path(
+					"Http/Controllers/NotificationController.php"
 				),
 			]
 			as $sourcePath => $targetPath
