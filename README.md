@@ -38,7 +38,7 @@ After publishing the utilities, follow these steps to complete the configuration
    Update the generated policy (`App\Policies\DatabaseNotificationPolicy`) to control access to notification management operations, ensuring it aligns with your project's authorization system.
 
 3. **Notifiable Trait Replacement**:
-   The package provides a custom `Notifiable` trait, which will be published to the `App\Traits` namespace along with the other management utilities. You must replace the built-in Laravel `Notifiable` trait with this one in your desired notifiable models. For example:
+   The package provides a custom `Notifiable` trait, which will be published along with the other management utilities. You must replace the built-in Laravel `Notifiable` trait with this one in your desired notifiable models. For example:
 
    ```php
    use App\Traits\Notifiable;
