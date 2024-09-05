@@ -1,7 +1,7 @@
 
 # Tadasei/backend-trashable-notifications
 
-This package provides stubs for managing trashable (soft deletable) database notifications in the backend of a Laravel application. It simplifies common Index, Update, and Delete notification operations by providing pre-defined structures.
+This package provides stubs for managing trashable (soft deletable) database notifications in the backend of a Laravel application. It simplifies common Index, Store, Update, and Delete notification operations by providing pre-defined structures.
 
 ## Features
 
