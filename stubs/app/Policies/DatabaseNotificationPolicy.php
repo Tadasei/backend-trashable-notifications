@@ -19,7 +19,7 @@ class DatabaseNotificationPolicy
 	 */
 	public function create(User $user): bool
 	{
-		return true;
+		return false;
 	}
 
 	/**
@@ -27,7 +27,7 @@ class DatabaseNotificationPolicy
 	 */
 	public function store(User $user, $context = null): bool
 	{
-		return true;
+		return false;
 	}
 
 	/**
@@ -52,7 +52,7 @@ class DatabaseNotificationPolicy
 	public function update(
 		User $user,
 		DatabaseNotification $notification,
-		$context = null,
+		$context = null
 	): bool {
 		return $this->edit($user, $notification);
 	}
@@ -63,9 +63,9 @@ class DatabaseNotificationPolicy
 	public function delete(
 		User $user,
 		DatabaseNotification $notification,
-		$context = null,
+		$context = null
 	): bool {
-		return $this->edit($user, $notification);
+		return $this->update($user, $notification);
 	}
 
 	/**
@@ -73,9 +73,9 @@ class DatabaseNotificationPolicy
 	 */
 	public function restore(
 		User $user,
-		DatabaseNotification $notification,
+		DatabaseNotification $notification
 	): bool {
-		return true;
+		return false;
 	}
 
 	/**
@@ -83,7 +83,7 @@ class DatabaseNotificationPolicy
 	 */
 	public function forceDelete(
 		User $user,
-		DatabaseNotification $notification,
+		DatabaseNotification $notification
 	): bool {
 		return $this->delete($user, $notification);
 	}
