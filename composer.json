@@ -1,6 +1,6 @@
 {
     "name": "tadasei/backend-trashable-notifications",
-    "description": "A package that provides stubs for soft deletable notifications support",
+    "description": "A package that provides stubs for soft deletable database notifications support",
 	"keywords": ["laravel", "notification", "stubs", "backend"],
     "type": "library",
     "license": "MIT",
