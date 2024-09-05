@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 use App\Rules\{ArrayItem, ExistingMorphId, HasConstructorParamKeys};
 
@@ -31,7 +29,13 @@ class SendNotificationRequest extends FormRequest
 				"required",
 				"array:type,id",
 				new ArrayItem([
-					"type" => ["required", "string", Rule::in([User::class])],
+					"type" => [
+						"required",
+						"string",
+						// Rule::in([
+						//     ExampleNotifiable::class,
+						// ]),
+					],
 					"id" => [
 						"required",
 						"numeric",
