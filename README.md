@@ -63,6 +63,13 @@ After publishing the utilities, follow these steps to complete the configuration
    });
    ```
 
+5. **Running the Migration**:
+   The package generates a migration as part of the utilities. You need to run this migration to set up the necessary database structure for managing trashable notifications. Use the following Artisan command:
+
+   ```bash
+   php artisan migrate
+   ```
+
 These steps are necessary to ensure that the package integrates smoothly with your application's existing structure.
 
 ### Further Customization
