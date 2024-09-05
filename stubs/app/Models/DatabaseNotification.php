@@ -30,7 +30,7 @@ class DatabaseNotification extends
 	 */
 	public function scopeNotifiableTypes(
 		Builder $query,
-		array $notifiableTypes,
+		array $notifiableTypes
 	): void {
 		$query->whereIn("notifiable_type", $notifiableTypes);
 	}
@@ -40,7 +40,7 @@ class DatabaseNotification extends
 	 */
 	public function scopeNotNotifiableTypes(
 		Builder $query,
-		array $notifiableTypes,
+		array $notifiableTypes
 	): void {
 		$query->whereNotIn("notifiable_type", $notifiableTypes);
 	}
