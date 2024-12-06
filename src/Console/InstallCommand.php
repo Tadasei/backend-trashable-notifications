@@ -44,6 +44,7 @@ class InstallCommand extends Command
 				app_path("Http/Requests"),
 				app_path("Http/Requests/DatabaseNotification"),
 				app_path("Http/Controllers"),
+				base_path("supervisor_conf"),
 			]
 			as $target_directory
 		) {
@@ -51,6 +52,28 @@ class InstallCommand extends Command
 				mkdir($target_directory, recursive: true);
 			}
 		}
+
+		// Setting up supervisord config file paths
+
+		$supervisor_conf_files_base_paths = collect([
+			"broadcast_notifications_worker.conf",
+			"db_notifications_worker.conf",
+			"default_worker.conf",
+			"notifications_worker.conf",
+			"reverb_server.conf",
+			"scheduled_tasks_worker.conf",
+		])
+			->mapWithKeys(
+				fn(string $file_name) => [
+					__DIR__ .
+					"/../../stubs/supervisor_conf/$file_name" => base_path(
+						"supervisor_conf/" .
+							str(config("app.name"))->snake() .
+							"_$file_name"
+					),
+				]
+			)
+			->all();
 
 		// Copying files
 
@@ -122,12 +145,28 @@ class InstallCommand extends Command
 				"/../../stubs/app/Http/Controllers/NotificationController.php" => app_path(
 					"Http/Controllers/NotificationController.php"
 				),
+
+				// Supervisord config files
+				...$supervisor_conf_files_base_paths,
 			]
 			as $sourcePath => $targetPath
 		) {
 			if (!file_exists($targetPath)) {
 				copy($sourcePath, $targetPath);
 			}
+		}
+
+		// Updating supervisord config files content with app name
+
+		foreach (
+			$supervisor_conf_files_base_paths
+			as $supervisor_conf_files_base_path
+		) {
+			$this->replaceInFile(
+				"stub",
+				str(config("app.name"))->snake(),
+				$supervisor_conf_files_base_path
+			);
 		}
 
 		$this->components->info("Scaffolding complete.");
