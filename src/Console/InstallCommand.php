@@ -68,7 +68,9 @@ class InstallCommand extends Command
 					__DIR__ .
 					"/../../stubs/supervisor_conf/$file_name" => base_path(
 						"supervisor_conf/" .
-							str(config("app.name"))->snake() .
+							str(config("app.name"))
+								->lower()
+								->snake() .
 							"_$file_name"
 					),
 				]
@@ -164,7 +166,9 @@ class InstallCommand extends Command
 		) {
 			$this->replaceInFile(
 				"stub",
-				str(config("app.name"))->snake(),
+				str(config("app.name"))
+					->lower()
+					->snake(),
 				$supervisor_conf_files_base_path
 			);
 		}
