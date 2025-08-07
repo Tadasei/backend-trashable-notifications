@@ -2,6 +2,7 @@
 
 namespace Tadasei\BackendTrashableNotifications\Console;
 
+use Closure;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
@@ -31,151 +32,171 @@ class InstallCommand extends Command
 	 */
 	public function handle()
 	{
-		// Ensuring required directories exist
+		$supervisorConfigPaths = collect([]);
 
-		foreach (
-			[
-				base_path("routes/resources"),
-				app_path("Traits"),
-				app_path("Rules"),
-				app_path("Policies"),
-				app_path("Models"),
-				app_path("Jobs"),
-				app_path("Http/Requests"),
-				app_path("Http/Requests/DatabaseNotification"),
-				app_path("Http/Controllers"),
-				base_path("supervisor_conf"),
-			]
-			as $target_directory
-		) {
-			if (!file_exists($target_directory)) {
-				mkdir($target_directory, recursive: true);
+		// Publish the scaffolding files
+
+		$this->publishDirectory(__DIR__ . "/../../stubs", function (
+			string $path
+		) use ($supervisorConfigPaths) {
+			if (!$this->isSupervisorConfigPath($path)) {
+				return $path;
 			}
-		}
 
-		// Setting up supervisord config file paths
+			[$fileName] = str($path)
+				->scan("supervisor_conf/%s")
+				->all();
 
-		$supervisor_conf_files_base_paths = collect([
-			"broadcast_notifications_worker.conf",
-			"db_notifications_worker.conf",
-			"default_worker.conf",
-			"notifications_worker.conf",
-			"reverb_server.conf",
-			"scheduled_tasks_worker.conf",
-		])
-			->mapWithKeys(
-				fn(string $file_name) => [
-					__DIR__ .
-					"/../../stubs/supervisor_conf/$file_name" => base_path(
-						"supervisor_conf/" .
-							str(config("app.name"))
-								->lower()
-								->snake() .
-							"_$file_name"
-					),
-				]
-			)
-			->all();
+			$targetPath = str_replace(
+				$fileName,
+				str(config("app.name"))
+					->lower()
+					->snake() . "_$fileName",
+				$path
+			);
 
-		// Copying files
+			$supervisorConfigPaths->push($targetPath);
 
-		foreach (
-			[
-				// Routes
-				__DIR__ .
-				"/../../stubs/routes/resources/notification.php" => base_path(
-					"routes/resources/notification.php"
-				),
+			return $targetPath;
+		});
 
-				// Migration
-				__DIR__ .
-				"/../../stubs/database/migrations/2024_04_16_082958_add_soft_deletes_to_notifications_table.php" => database_path(
-					"migrations/2024_04_16_082958_add_soft_deletes_to_notifications_table.php"
-				),
+		// Update supervisord config files content with app name
 
-				// Trait
-				__DIR__ . "/../../stubs/app/Traits/Notifiable.php" => app_path(
-					"Traits/Notifiable.php"
-				),
-
-				// Validation rules
-				__DIR__ . "/../../stubs/app/Rules/ArrayItem.php" => app_path(
-					"Rules/ArrayItem.php"
-				),
-
-				__DIR__ .
-				"/../../stubs/app/Rules/ExistingMorphId.php" => app_path(
-					"Rules/ExistingMorphId.php"
-				),
-
-				__DIR__ .
-				"/../../stubs/app/Rules/HasConstructorParamKeys.php" => app_path(
-					"Rules/HasConstructorParamKeys.php"
-				),
-
-				// Policy
-				__DIR__ .
-				"/../../stubs/app/Policies/DatabaseNotificationPolicy.php" => app_path(
-					"Policies/DatabaseNotificationPolicy.php"
-				),
-
-				// Model
-				__DIR__ .
-				"/../../stubs/app/Models/DatabaseNotification.php" => app_path(
-					"Models/DatabaseNotification.php"
-				),
-
-				// Job
-				__DIR__ .
-				"/../../stubs/app/Jobs/SendNotification.php" => app_path(
-					"Jobs/SendNotification.php"
-				),
-
-				// Form requests
-				__DIR__ .
-				"/../../stubs/app/Http/Requests/SendNotificationRequest.php" => app_path(
-					"Http/Requests/SendNotificationRequest.php"
-				),
-
-				__DIR__ .
-				"/../../stubs/app/Http/Requests/DatabaseNotification/DeleteDatabaseNotificationRequest.php" => app_path(
-					"Http/Requests/DatabaseNotification/DeleteDatabaseNotificationRequest.php"
-				),
-
-				// Controller
-				__DIR__ .
-				"/../../stubs/app/Http/Controllers/NotificationController.php" => app_path(
-					"Http/Controllers/NotificationController.php"
-				),
-
-				// Supervisord config files
-				...$supervisor_conf_files_base_paths,
-			]
-			as $sourcePath => $targetPath
-		) {
-			if (!file_exists($targetPath)) {
-				copy($sourcePath, $targetPath);
-			}
-		}
-
-		// Updating supervisord config files content with app name
-
-		foreach (
-			$supervisor_conf_files_base_paths
-			as $supervisor_conf_files_base_path
-		) {
-			$this->replaceInFile(
+		$supervisorConfigPaths->each(
+			fn(string $path) => $this->replaceInFile(
 				"stub",
 				str(config("app.name"))
 					->lower()
 					->snake(),
-				$supervisor_conf_files_base_path
-			);
-		}
+				$path
+			)
+		);
+
+		// Notify of completion
 
 		$this->components->info("Scaffolding complete.");
 
-		return 1;
+		return 0;
+	}
+
+	protected function isSupervisorConfigPath(string $path): bool
+	{
+		return str_contains($path, "supervisor_conf");
+	}
+
+	protected function publishDirectory(
+		string $directory,
+		?Closure $getTargetFilePath = null,
+		?string $prefix = null
+	): void {
+		$files = $this->listDirectoryFiles(
+			$directory,
+			$getTargetFilePath,
+			$prefix
+		);
+
+		// Ensuring target directories exist
+
+		$this->ensureTargetDirectoriesExist($files);
+
+		// Copying files
+
+		$this->copyFiles($files);
+	}
+
+	protected function copyFiles(array $files): void
+	{
+		collect($files)->each(function (array $file) {
+			if (!file_exists($file["target"])) {
+				copy($file["source"], $file["target"]);
+			}
+		});
+	}
+
+	protected function ensureTargetDirectoriesExist(array $files): void
+	{
+		collect($files)
+			->map(
+				fn(array $file) => str_replace(
+					"/{$file["name"]}",
+					"",
+					$file["target"]
+				)
+			)
+			->unique()
+			->each(function (string $targetDirectory) {
+				if (!file_exists($targetDirectory)) {
+					mkdir($targetDirectory, recursive: true);
+				}
+			});
+	}
+
+	protected function listDirectoryFiles(
+		string $directory,
+		?Closure $getTargetFilePath = null,
+		?string $prefix = null
+	): array {
+		$directoryMap = $this->getDirectoryMap(
+			$directory,
+			$getTargetFilePath,
+			$prefix
+		);
+
+		return $this->getDirectoryMapFiles($directoryMap);
+	}
+
+	protected function getDirectoryMapFiles(array $directoryMap): array
+	{
+		return collect($directoryMap)
+			->flatMap(
+				fn(array $item) => key_exists("map", $item)
+					? $this->getDirectoryMapFiles($item["map"])
+					: [$item]
+			)
+			->all();
+	}
+
+	protected function getDirectoryMap(
+		string $directory,
+		?Closure $getTargetFilePath = null,
+		?string $prefix = null
+	): array {
+		$prefix ??= "$directory/";
+
+		$getTargetFilePath ??= fn(string $path): string => $path;
+
+		return collect(scandir($directory))
+			->reject(fn(string $name) => in_array($name, [".", ".."]))
+			->values()
+			->map(function (string $name) use (
+				$directory,
+				$getTargetFilePath,
+				$prefix
+			) {
+				$source = "$directory/$name";
+
+				return [
+					"name" => $name,
+					"source" => $source,
+					...is_dir($source)
+						? [
+							"map" => $this->getDirectoryMap(
+								$source,
+								$getTargetFilePath,
+								$prefix
+							),
+						]
+						: [
+							"target" => $getTargetFilePath(
+								base_path(
+									str_replace($prefix, "", $directory) .
+										"/$name"
+								)
+							),
+						],
+				];
+			})
+			->all();
 	}
 
 	/**
