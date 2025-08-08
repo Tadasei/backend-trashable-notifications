@@ -2,13 +2,15 @@
 
 namespace Tadasei\BackendTrashableNotifications\Console;
 
-use Closure;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
 use RuntimeException;
 
-use Symfony\Component\Process\{PhpExecutableFinder, Process};
+use Symfony\Component\Process\{
+	PhpExecutableFinder,
+	Process
+};
 
 class InstallCommand extends Command
 {
@@ -32,43 +34,21 @@ class InstallCommand extends Command
 	 */
 	public function handle()
 	{
-		$supervisorConfigPaths = collect([]);
-
 		// Publish the scaffolding files
 
-		$this->publishDirectory(__DIR__ . "/../../stubs", function (
-			string $path
-		) use ($supervisorConfigPaths) {
-			if (!$this->isSupervisorConfigPath($path)) {
-				return $path;
-			}
-
-			[$fileName] = str($path)
-				->scan("supervisor_conf/%s")
-				->all();
-
-			$targetPath = str_replace(
-				$fileName,
-				str(config("app.name"))
-					->lower()
-					->snake() . "_$fileName",
-				$path
-			);
-
-			$supervisorConfigPaths->push($targetPath);
-
-			return $targetPath;
-		});
+		$publishedFiles = collect(
+			$this->publishDirectory(__DIR__ . "/../../stubs")
+		);
 
 		// Update supervisord config files content with app name
 
-		$supervisorConfigPaths->each(
-			fn(string $path) => $this->replaceInFile(
+		$publishedFiles->where("isSupervisorConfig", true)->each(
+			fn(array $file) => $this->replaceInFile(
 				"stub",
 				str(config("app.name"))
 					->lower()
 					->snake(),
-				$path
+				$file["target"]
 			)
 		);
 
@@ -79,21 +59,46 @@ class InstallCommand extends Command
 		return 0;
 	}
 
-	protected function isSupervisorConfigPath(string $path): bool
+	protected function isSupervisorConfigFile(array $file): bool
 	{
-		return str_contains($path, "supervisor_conf");
+		return str_ends_with($file["name"], ".conf");
+	}
+
+	protected function getTargetFile(array $file): array
+	{
+		["name" => $name, "target" => $target] = $file;
+
+		$isSupervisorConfig = $this->isSupervisorConfigFile($file);
+
+		if ($isSupervisorConfig) {
+			$newName =
+				str(config("app.name"))
+					->lower()
+					->snake() . "_$name";
+
+			$target = str_replace($name, $newName, $target);
+
+			$name = $newName;
+		}
+
+		return [
+			"source" => $file["source"],
+
+			"name" => $name,
+
+			"target" => $target,
+
+			"isSupervisorConfig" => $isSupervisorConfig,
+		];
 	}
 
 	protected function publishDirectory(
 		string $directory,
-		?Closure $getTargetFilePath = null,
 		?string $prefix = null
-	): void {
-		$files = $this->listDirectoryFiles(
-			$directory,
-			$getTargetFilePath,
-			$prefix
-		);
+	): array {
+		$files = collect($this->listDirectoryFiles($directory, $prefix))
+			->map(fn(array $file) => $this->getTargetFile($file))
+			->all();
 
 		// Ensuring target directories exist
 
@@ -101,16 +106,17 @@ class InstallCommand extends Command
 
 		// Copying files
 
-		$this->copyFiles($files);
+		$copiedFiles = $this->copyFiles($files);
+
+		return $copiedFiles;
 	}
 
-	protected function copyFiles(array $files): void
+	protected function copyFiles(array $files): array
 	{
-		collect($files)->each(function (array $file) {
-			if (!file_exists($file["target"])) {
-				copy($file["source"], $file["target"]);
-			}
-		});
+		return collect($files)
+			->filter(fn(array $file) => !file_exists($file["target"]))
+			->each(fn(array $file) => copy($file["source"], $file["target"]))
+			->all();
 	}
 
 	protected function ensureTargetDirectoriesExist(array $files): void
@@ -124,23 +130,22 @@ class InstallCommand extends Command
 				)
 			)
 			->unique()
-			->each(function (string $targetDirectory) {
-				if (!file_exists($targetDirectory)) {
-					mkdir($targetDirectory, recursive: true);
-				}
-			});
+			->filter(
+				fn(string $targetDirectory) => !file_exists($targetDirectory)
+			)
+			->each(
+				fn(string $targetDirectory) => mkdir(
+					$targetDirectory,
+					recursive: true
+				)
+			);
 	}
 
 	protected function listDirectoryFiles(
 		string $directory,
-		?Closure $getTargetFilePath = null,
 		?string $prefix = null
 	): array {
-		$directoryMap = $this->getDirectoryMap(
-			$directory,
-			$getTargetFilePath,
-			$prefix
-		);
+		$directoryMap = $this->getDirectoryMap($directory, $prefix);
 
 		return $this->getDirectoryMapFiles($directoryMap);
 	}
@@ -158,21 +163,14 @@ class InstallCommand extends Command
 
 	protected function getDirectoryMap(
 		string $directory,
-		?Closure $getTargetFilePath = null,
 		?string $prefix = null
 	): array {
 		$prefix ??= "$directory/";
 
-		$getTargetFilePath ??= fn(string $path): string => $path;
-
 		return collect(scandir($directory))
 			->reject(fn(string $name) => in_array($name, [".", ".."]))
 			->values()
-			->map(function (string $name) use (
-				$directory,
-				$getTargetFilePath,
-				$prefix
-			) {
+			->map(function (string $name) use ($directory, $prefix) {
 				$source = "$directory/$name";
 
 				return [
@@ -180,18 +178,11 @@ class InstallCommand extends Command
 					"source" => $source,
 					...is_dir($source)
 						? [
-							"map" => $this->getDirectoryMap(
-								$source,
-								$getTargetFilePath,
-								$prefix
-							),
+							"map" => $this->getDirectoryMap($source, $prefix),
 						]
 						: [
-							"target" => $getTargetFilePath(
-								base_path(
-									str_replace($prefix, "", $directory) .
-										"/$name"
-								)
+							"target" => base_path(
+								str_replace($prefix, "", $directory) . "/$name"
 							),
 						],
 				];
